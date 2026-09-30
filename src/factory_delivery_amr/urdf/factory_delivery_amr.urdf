@@ -1,0 +1,297 @@
+<?xml version="1.0"?>
+<!--
+DESIGN / ASSUMPTION LEDGER — concept demonstrator, not a released design
+Source: "Thiết kế Robot - C1-C3.pdf", reviewed as a 28-page scanned PDF.
+Source-backed mission targets: 20 kg context load (slide 7; requirement R01 on
+slide 34 says >20 kg), >=1.2 m/s (R02), docking error <=30 mm (R03), runtime
+>=4 h (R04), >=1.2 m aisle (R05), person detection >=3 m (R06). Differential
+drive is the highest-scoring concept (4.70) on slide 50. The detailed geometry,
+actuator sizing, sensor models, and final electronics remain undecided in the PDF.
+
+Illustrative model assumptions (replace from released CAD and measured BOM):
+* Units: metre, kilogram, second, radian. +Z up; ROS body frame is +X forward,
+  +Y left, +Z up. base_footprint origin is on the floor at the drive-axle
+  midpoint; base_link origin is at the centre of the chassis envelope.
+* Chassis envelope 0.65 x 0.50 x 0.16 m, centred 0.24 m above floor;
+  chassis mass 28 kg. Two driven wheels: radius 0.08 m, width 0.04 m,
+  1 kg each, track 0.56 m. Two fixed spherical support rollers: radius
+  0.04 m, 0.25 kg each. These are modelling placeholders, not chosen parts.
+* Fixed tray: 0.50 x 0.45 x 0.02 m, 3 kg, top at z=0.37 m. Illustrative
+  20 kg payload proxy: 0.38 x 0.38 x 0.25 m box resting on the tray. It is
+  fixed to show the loaded case; it does not model a pickup/drop-off mechanism.
+* LiDAR housing/scan frame is forward of the payload, at (0.24, 0, 0.60) m
+  from base_link; nominal scan is planar. Sensor range/accuracy are not
+  attributed to any product and do NOT establish the 3 m people-detection
+  requirement.
+* URDF primitive inertias are computed about each link's own centre of mass
+  using the box/cylinder/sphere formulae. Masses and COMs are assumed for this
+  example and must be replaced by CAD/BOM measurements before engineering use.
+* Joint origins are expressed in the parent link frame; wheel axes are +Y.
+* The ROS 2 Gazebo Classic diff-drive plugin publishes odom->base_footprint.
+  publish_wheel_tf is false, so robot_state_publisher publishes wheel and fixed
+  link transforms from joint states; the nodes own separate TF edges.
+* Open items: >20 kg payload acceptance, loaded/unloaded envelopes and COM,
+  material/thickness, wheel/gearbox/BLDC torque and thermal sizing, braking,
+  battery/BMS and 4 h energy budget, safety-rated E-stop, LiDAR/camera/IMU/
+  encoder selections, docking hardware, and site-specific safety validation.
+-->
+<robot name="factory_delivery_amr">
+  <material name="chassis_blue">
+    <color rgba="0.16 0.31 0.52 1"/>
+  </material>
+  <material name="wheel_black">
+    <color rgba="0.10 0.10 0.11 1"/>
+  </material>
+  <material name="tray_gray">
+    <color rgba="0.55 0.58 0.62 1"/>
+  </material>
+  <material name="payload_orange">
+    <color rgba="0.86 0.42 0.12 1"/>
+  </material>
+  <material name="sensor_dark">
+    <color rgba="0.12 0.14 0.17 1"/>
+  </material>
+
+  <link name="base_footprint"/>
+
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="28.0"/>
+      <inertia ixx="0.643067" ixy="0" ixz="0" iyy="1.045567" iyz="0" izz="1.569167"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="0.65 0.50 0.16"/></geometry>
+      <material name="chassis_blue"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="0.65 0.50 0.16"/></geometry>
+    </collision>
+  </link>
+
+  <joint name="base_footprint_to_base_link" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0.24" rpy="0 0 0"/>
+  </joint>
+
+  <link name="left_wheel_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1.0"/>
+      <inertia ixx="0.001733" ixy="0" ixz="0" iyy="0.003200" iyz="0" izz="0.001733"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="1.57079632679 0 0"/>
+      <geometry><cylinder radius="0.08" length="0.04"/></geometry>
+      <material name="wheel_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.57079632679 0 0"/>
+      <geometry><cylinder radius="0.08" length="0.04"/></geometry>
+    </collision>
+  </link>
+  <joint name="left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="left_wheel_link"/>
+    <origin xyz="0 0.28 -0.16" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <dynamics damping="0.05" friction="0.0"/>
+  </joint>
+
+  <link name="right_wheel_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1.0"/>
+      <inertia ixx="0.001733" ixy="0" ixz="0" iyy="0.003200" iyz="0" izz="0.001733"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="1.57079632679 0 0"/>
+      <geometry><cylinder radius="0.08" length="0.04"/></geometry>
+      <material name="wheel_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.57079632679 0 0"/>
+      <geometry><cylinder radius="0.08" length="0.04"/></geometry>
+    </collision>
+  </link>
+  <joint name="right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="right_wheel_link"/>
+    <origin xyz="0 -0.28 -0.16" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <dynamics damping="0.05" friction="0.0"/>
+  </joint>
+
+  <link name="front_support_ball">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.25"/>
+      <inertia ixx="0.000400" ixy="0" ixz="0" iyy="0.000400" iyz="0" izz="0.000400"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><sphere radius="0.04"/></geometry>
+      <material name="wheel_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><sphere radius="0.04"/></geometry>
+    </collision>
+  </link>
+  <joint name="front_support_fixed" type="fixed">
+    <parent link="base_link"/>
+    <child link="front_support_ball"/>
+    <origin xyz="0.26 0 -0.20" rpy="0 0 0"/>
+  </joint>
+
+  <link name="rear_support_ball">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.25"/>
+      <inertia ixx="0.000400" ixy="0" ixz="0" iyy="0.000400" iyz="0" izz="0.000400"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><sphere radius="0.04"/></geometry>
+      <material name="wheel_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><sphere radius="0.04"/></geometry>
+    </collision>
+  </link>
+  <joint name="rear_support_fixed" type="fixed">
+    <parent link="base_link"/>
+    <child link="rear_support_ball"/>
+    <origin xyz="-0.26 0 -0.20" rpy="0 0 0"/>
+  </joint>
+
+  <link name="transfer_tray">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="3.0"/>
+      <inertia ixx="0.050781" ixy="0" ixz="0" iyy="0.062656" iyz="0" izz="0.113125"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="0.50 0.45 0.02"/></geometry>
+      <material name="tray_gray"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="0.50 0.45 0.02"/></geometry>
+    </collision>
+  </link>
+  <joint name="tray_fixed" type="fixed">
+    <parent link="base_link"/>
+    <child link="transfer_tray"/>
+    <origin xyz="0 0 0.12" rpy="0 0 0"/>
+  </joint>
+
+  <link name="payload_proxy">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="20.0"/>
+      <inertia ixx="0.344833" ixy="0" ixz="0" iyy="0.344833" iyz="0" izz="0.481333"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="0.38 0.38 0.25"/></geometry>
+      <material name="payload_orange"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="0.38 0.38 0.25"/></geometry>
+    </collision>
+  </link>
+  <joint name="payload_proxy_fixed" type="fixed">
+    <parent link="transfer_tray"/>
+    <child link="payload_proxy"/>
+    <origin xyz="0 0 0.135" rpy="0 0 0"/>
+  </joint>
+
+  <link name="front_lidar_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1.0"/>
+      <inertia ixx="0.000806" ixy="0" ixz="0" iyy="0.000806" iyz="0" izz="0.001013"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.045" length="0.06"/></geometry>
+      <material name="sensor_dark"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.045" length="0.06"/></geometry>
+    </collision>
+  </link>
+  <joint name="front_lidar_fixed" type="fixed">
+    <parent link="base_link"/>
+    <child link="front_lidar_link"/>
+    <origin xyz="0.24 0 0.60" rpy="0 0 0"/>
+  </joint>
+
+  <gazebo>
+    <plugin name="joint_state_publisher" filename="libgazebo_ros_joint_state_publisher.so">
+      <ros>
+        <namespace>/</namespace>
+      </ros>
+      <update_rate>50</update_rate>
+      <joint_name>left_wheel_joint</joint_name>
+      <joint_name>right_wheel_joint</joint_name>
+    </plugin>
+
+    <plugin name="diff_drive" filename="libgazebo_ros_diff_drive.so">
+      <ros>
+        <namespace>/</namespace>
+      </ros>
+      <update_rate>50</update_rate>
+      <left_joint>left_wheel_joint</left_joint>
+      <right_joint>right_wheel_joint</right_joint>
+      <wheel_separation>0.56</wheel_separation>
+      <wheel_diameter>0.16</wheel_diameter>
+      <max_wheel_torque>20</max_wheel_torque>
+      <max_wheel_acceleration>2.0</max_wheel_acceleration>
+      <odometry_frame>odom</odometry_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+      <publish_odom>true</publish_odom>
+      <publish_odom_tf>true</publish_odom_tf>
+      <publish_wheel_tf>false</publish_wheel_tf>
+    </plugin>
+  </gazebo>
+
+  <gazebo reference="front_lidar_link">
+    <sensor name="front_lidar" type="ray">
+      <always_on>true</always_on>
+      <visualize>false</visualize>
+      <update_rate>10</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>720</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159265359</min_angle>
+            <max_angle>3.14159265359</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.12</min>
+          <max>10.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin name="front_lidar_ros" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+          <namespace>/</namespace>
+          <remapping>~/out:=/scan</remapping>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+        <frame_name>front_lidar_link</frame_name>
+      </plugin>
+    </sensor>
+  </gazebo>
+</robot>

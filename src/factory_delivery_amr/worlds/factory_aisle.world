@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+  <world name="factory_aisle">
+    <gravity>0 0 -9.81</gravity>
+    <physics name="default_physics" type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+    <include><uri>model://ground_plane</uri></include>
+    <include><uri>model://sun</uri></include>
+
+    <!-- Clear inside width is 1.20 m: wall inner faces at y = +/-0.60 m. -->
+    <model name="left_aisle_wall">
+      <static>true</static>
+      <pose>0 0.64 0.60 0 0 0</pose>
+      <link name="wall">
+        <collision name="collision"><geometry><box><size>8.0 0.08 1.20</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>8.0 0.08 1.20</size></box></geometry><material><ambient>0.45 0.48 0.52 1</ambient><diffuse>0.45 0.48 0.52 1</diffuse></material></visual>
+      </link>
+    </model>
+    <model name="right_aisle_wall">
+      <static>true</static>
+      <pose>0 -0.64 0.60 0 0 0</pose>
+      <link name="wall">
+        <collision name="collision"><geometry><box><size>8.0 0.08 1.20</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>8.0 0.08 1.20</size></box></geometry><material><ambient>0.45 0.48 0.52 1</ambient><diffuse>0.45 0.48 0.52 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <!-- A fixed obstacle gives /scan something to detect; it is not a person model. -->
+    <model name="aisle_obstacle">
+      <static>true</static>
+      <pose>2.0 -0.22 0.50 0 0 0</pose>
+      <link name="obstacle">
+        <collision name="collision"><geometry><box><size>0.35 0.28 1.00</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.35 0.28 1.00</size></box></geometry><material><ambient>0.80 0.20 0.10 1</ambient><diffuse>0.80 0.20 0.10 1</diffuse></material></visual>
+      </link>
+    </model>
+  </world>
+</sdf>
